@@ -1,4 +1,4 @@
-# 🚨 RGB LED Mini Project - Ambient Trello Aura
+# 📦 Project jack in a box
 
 ![INFO](https://img.shields.io/badge/INFO-5321-B31B1B)
 ![Trello](https://img.shields.io/badge/Trello-%23026AA7.svg?style=flat&logo=trello&logoColor=white)
@@ -6,18 +6,12 @@
 ![Arduino IDE](https://img.shields.io/badge/-Arduino_IDE-00979D?logo=Arduino&logoColor=white)
 ![C++](https://img.shields.io/badge/-C++-00599C?logo=c%2B%2B&logoColor=white)
 
-<div align="center">
-  <img src="img/raspberry-pi-logo.png-128.png" alt="Raspberry Pi Logo" />
-</div>
-
-**Ambient Trello Aura**: A desktop companion that translates Trello task deadlines into dynamic RGB lighting, helping users visualize workload pressure and manage digital anxiety. (Built with Raspberry Pi Pico W and RGB LEDs)
-
-## 💡 Idea
-The inspiration for this project stemmed from extensive experience utilizing project management tools like Trello, as well as prior development of Discord bots for automated notifications includes Trello and Github. The primary goal was to bridge the gap between digital workflows and the physical environment—creating a desk accessory that provides real-time project notifications without relying on a browser window or chat interface.
+**Project jack in a box**: A Jack in a Box toy / desk setup based on the [Ambient Trello Aura](https://github.com/XXXStars0/Project-LED-Light). Currently under development.
 
 ## 📁 Project Structure
 
-- `img/`: Circuit diagrams and design images.
+- `img/`: Circuit diagrams and design images (Legacy).
+- `design/`: Design diagrams and documentation for the current project.
 - `RGB_LED/`: Arduino/C++ source code for the Pico W.
 - `Processing_Connect/`: Alt wired internet connection mode using Processing.
 - `tests/`: API verification and testing scripts (Python).
@@ -27,37 +21,21 @@ The inspiration for this project stemmed from extensive experience utilizing pro
 - Raspberry Pi Pico W
 - RGB LED (Common Cathode)
 - Potentiometer 
-- Push Button (with 10KΩ Resistor)
+- MG 996R (GP16 control, VBUS power)
+- 100µF Capacitor (between VBUS and GND)
 - 3× 220Ω Resistors (for RGB LED current limiting)
 - Breadboard and jumper wires
 
-### Initial Design vs. Final Implementation
-Due to project time constraints and to ensure code stability, two initially planned components were excluded from the final build to focus effort on software reliability:
-1. **Photoresistor (LDR)**: Intended for adaptive LED brightness. Tests showed marginal visual improvements that did not justify the added code complexity.
-2. **Ultrasonic Sensor**: Intended to detect user presence (automatic sleep when no one is at the desk). The sleep functionality is now reliably handled manually via the Push Button.
+## 🎨 Design
+New design is still under development.
 
 ## 💡 Pin Mapping Reference
 
-![Circuit Schematic](img/schematic.jpg)
-
-![Wokwi Layout](img/img_circuit_4.png)
-
-| Component         | Pico W Pin                   | Note           |
-| ----------------- | ---------------------------- | -------------- |
-| **RGB LED**       | GP13 (R), GP14 (G), GP15 (B) | PWM Support    |
-| **Potentiometer** | GP27                         | Analog Input   |
-| **Button**        | GP16                         | Pull-down Res. |
-
-### Previous Design Iterations
-<details>
-<summary>Click to view previous circuit versions</summary>
-
-![Circuit Diagram V3 (Simplified)](img/img_circuit_3.jpeg)
-*Version 3 — Simplified breadboard layout, removed unused sensors*
-
-![Circuit Diagram V2 (Corrected with 220Ω Resistors)](img/img_circuit_2.jpeg)
-*Version 2 — Fixed original circuit diagram, added 220Ω resistors for RGB LED*
-</details>
+| Component          | Pico W Pin                   | Note           |
+| ------------------ | ---------------------------- | -------------- |
+| **RGB LED**        | GP13 (R), GP14 (G), GP15 (B) | PWM Support    |
+| **Potentiometer**  | GP27                         | Analog Input   |
+| **Servo (MG 996R)**| GP16                         | PWM Control    |
 
 ## 📡 API Integration
 
@@ -156,11 +134,8 @@ Pico W Pin PWM Output Instructions:
 ## 🧰 Usage Instructions
 
 ### Controls
-- **Button (GP16):**
-  - **Short press (< 300ms):** Force refresh the current list data.
-  - **Long press (≥ 300ms):** Toggle sleep mode (LEDs turned off).
 - **Potentiometer (Knob):** Rotate to scroll through Trello lists. The system detects index changes (Edge Detection) and instantly triggers a data fetch. 
-- **Wake:** When in Sleep mode, either pressing the button or rotating the potentiometer will immediately awaken the device and resume tracking.
+- **Wake:** Rotating the potentiometer will immediately awaken the device and resume tracking.
 
 ### Visual Status Indicators (LED)
 The Pico W uses dual-core architecture for non-blocking LED animations (Core 1) during API requests (Core 0):
@@ -173,20 +148,3 @@ The Pico W uses dual-core architecture for non-blocking LED animations (Core 1) 
   - 🟡 **Yellow:** Medium pressure.
   - 🔴 **Red:** High pressure (urgent/overdue).
 
-## 🛠️ Troubleshooting & Fixes
-
-- **Wired Mode Sleep Failure When Disconnected:**
-  - *Issue:* In early iterations, the button logic simply sent sleep commands to the Processing sketch. If the computer was disconnected, the Pico W failed to enter sleep mode.
-  - *Fix:* Shifted the sleep state management directly into the Pico W's local loop logic, ensuring independent operation regardless of the Serial connection status.
-
-- **Pico W Not Reading Potentiometer Data:**
-  - *Issue:* The board and wiring appeared correct, but no potentiometer readings were registered.
-  - *Fix:* Discovered the potentiometer was mistakenly connected to the `RUN` (reset) pin instead of the designated `GP26` analog input pin. Reconnecting resolved the issue.
-
-- **Pico W Board Overheating:**
-  - *Issue:* The RGB LED caused a short circuit, resulting in rapid overheating of the Pico W board.
-  - *Fix:* Added **220Ω resistors** to the RGB LED circuits to limit current draw, successfully preventing short circuits and excessive heat.
-
-- **USB Disconnect at Low Potentiometer Values (GP26):**
-  - *Issue:* When the potentiometer was connected to `GP26` and rotated to near-minimum values, the USB Serial connection between the Pico W and the computer would drop unexpectedly.
-  - *Fix:* Relocated the potentiometer signal wire from `GP26` to `GP27`. The exact root cause on `GP26` remains unclear, but the issue has not reoccurred on `GP27`.
