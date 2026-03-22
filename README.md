@@ -1,4 +1,4 @@
-# 📦 Project jack in a box
+# 📦 Jack in the Box - Kinetic Trello Aura
 
 ![INFO](https://img.shields.io/badge/INFO-5321-B31B1B)
 ![Trello](https://img.shields.io/badge/Trello-%23026AA7.svg?style=flat&logo=trello&logoColor=white)
@@ -6,7 +6,11 @@
 ![Arduino IDE](https://img.shields.io/badge/-Arduino_IDE-00979D?logo=Arduino&logoColor=white)
 ![C++](https://img.shields.io/badge/-C++-00599C?logo=c%2B%2B&logoColor=white)
 
-**Project jack in a box**: A Jack in a Box toy / desk setup based on the [Ambient Trello Aura](https://github.com/XXXStars0/Project-LED-Light). Now supports **RedRover** (Cornell IoT) for standalone connectivity. Currently under development.
+**Kinetic Trello Aura** is a mechanical evolution of digital task management. It translates abstract Trello backlog pressure into a multi-sensory physical manifestation.
+
+## 💡 Idea
+
+As a mechanical evolution of the [Ambient Trello Aura](https://github.com/XXXStars0/Project-LED-Light), this project reimagines the classic "Jack in the Box" toy as a dynamic workspace companion. Supporting both **RedRover** (Cornell IoT) and custom Wi-Fi for versatile standalone connectivity, it translates digital urgency into mechanical movement and ambient light—providing a tangible, real-time pulse of project health and progress.
 
 ## 📁 Project Structure
 
@@ -27,7 +31,16 @@
 - Breadboard and jumper wires
 
 ## 🎨 Design
-New design is still under development.
+
+### Prototypes & Schematic
+![Breadboard Assembly](img/breadboard_Assembly.jpeg)
+*Current breadboard assembly for component testing and logic verification.*
+
+![Wokwi Design](img/Wokwi_Design.png)
+*Wokwi circuit simulation for digital twin development.*
+
+> [!NOTE]
+> The project is currently under active development. The **Laser Cutting** enclosure design and final assembly documentation are currently in progress.
 
 ## 💡 Pin Mapping Reference
 

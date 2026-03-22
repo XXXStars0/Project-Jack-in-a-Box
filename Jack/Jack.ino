@@ -4,6 +4,7 @@
 
 // Mode switch: edit wifi_config.h
 #include "wifi_config.h"
+#include <Servo.h>
 
 // RGB LED Type: Uncomment if using Common Anode RGB LED
 // #define RGB_COMMON_ANODE
@@ -12,16 +13,21 @@
 const int PIN_LED_R = 13;
 const int PIN_LED_G = 14;
 const int PIN_LED_B = 15;
+const int PIN_SERVO = 16;
 
 // Pin Setup - Input
 const int PIN_POT = 27;
-const int PIN_SERVO = 16;
+// const int PIN_LDR = 27;  // TODO: Future sensor input
+// const int PIN_IR = 28;   // TODO: Future sensor input
 
-// const int PIN_LDR = 27;
-// const int PIN_IR = 28;
-
-// Serial1 baud must match Processing sketch
+// Serial baud rate
 const int SERIAL1_BAUD = 9600;
+
+// --- Servo Config ---
+const int SERVO_POS_CLOSED = 0;
+const int SERVO_POS_OPEN = 180;
+const float PRESSURE_SHAKE_THRESHOLD = 0.5;
+const float PRESSURE_POP_THRESHOLD = 0.8;
 
 // --- State Machine ---
 enum SystemState {
@@ -32,10 +38,23 @@ enum SystemState {
   STATE_SLEEP = 4
 };
 
+enum ServoState {
+  SERVO_IDLE = 0,
+  SERVO_SHAKING = 1,
+  SERVO_OPEN = 2
+};
+
 volatile SystemState currentState = STATE_BOOTING;
 volatile int targetR = 0;
 volatile int targetG = 0;
 volatile int targetB = 0;
+volatile float pressureRatio = 0.0;
+
+Servo boxServo;
+ServoState servoState = SERVO_IDLE;
+unsigned long lastShakeTime = 0;
+bool shakeDirection = false;
+int shakeCount = 0;
 
 // WiFi-mode-only includes and globals
 #ifdef USE_WIFI_MODE
@@ -143,7 +162,7 @@ void loop1() {
 // ---------------------------------------------------------
 
 void setup() {
-  Serial.begin(9600); // Unified baud rate for both debugging and Processing
+  Serial.begin(9600);
   
   // GP13/14/15 are shared with SPI1 by default on Pico W
   pinMode(PIN_LED_R, OUTPUT);
@@ -151,6 +170,10 @@ void setup() {
   pinMode(PIN_LED_B, OUTPUT);
   pinMode(PIN_POT, INPUT);
   analogReadResolution(12);
+
+  // Servo init
+  boxServo.attach(PIN_SERVO);
+  boxServo.write(SERVO_POS_CLOSED);
 
   currentState = STATE_BOOTING;
 
@@ -223,13 +246,10 @@ void loop() {
 
   static int lastSelectedIndex = -1;
   static unsigned long lastApiRequestTime = 0;
-  const unsigned long apiRequestInterval = 10000;
-
-  // Servo control placeholder
-  // static bool servoTriggered = false;
-  // TODO: Implement MG 996R servo control when button is removed
+  const unsigned long apiRequestInterval = 30000; // 30s between auto-refreshes
 
   if (currentState == STATE_SLEEP) {
+    boxServo.write(SERVO_POS_CLOSED);
     // Wake on pot movement
     int potNow = analogRead(PIN_POT);
     int idxNow = map(potNow, 0, 4096, 0, listCount);
@@ -253,6 +273,7 @@ void loop() {
 
   if (listChanged || timeToUpdate) {
     currentState = STATE_LOADING;
+    // TODO: Future - pause servo during loading if needed
 
     Serial.println("\n========================================");
     Serial.print("---> Tracking list: '");
@@ -265,12 +286,13 @@ void loop() {
 
     // Color mapping: Blue(idle) → Green(low) → Yellow(mid) → Red(high)
     int r, g, b;
+    float ratio = 0.0;
     if (totalPressure == 0) {
       r = 0;
       g = 0;
       b = 255;
     } else {
-      float ratio = (float)totalPressure / MAX_PRESSURE_THRESHOLD;
+      ratio = (float)totalPressure / MAX_PRESSURE_THRESHOLD;
       if (ratio > 1.0)
         ratio = 1.0;
       if (ratio <= 0.5) {
@@ -285,18 +307,32 @@ void loop() {
       b = 0;
     }
 
-    // Update target colors that Core 1 will use in TRACKING state
     targetR = r;
     targetG = g;
     targetB = b;
+    pressureRatio = ratio;
 
-    // Update detection states
+    Serial.print("Pressure Ratio: ");
+    Serial.println(ratio);
+    Serial.print("Target Servo State: ");
+    if (ratio >= PRESSURE_POP_THRESHOLD) {
+      Serial.println("OPEN (Red)");
+    } else if (ratio >= PRESSURE_SHAKE_THRESHOLD) {
+      Serial.println("SHAKING (Yellow)");
+    } else {
+      Serial.println("IDLE (Blue/Green)");
+    }
+
     lastSelectedIndex = currentSelectedIndex;
     lastApiRequestTime = millis();
 
     delay(200);
     currentState = STATE_TRACKING;
   }
+
+  // --- Servo Update ---
+  // TODO: Future - add sensor-based servo override here
+  updateServo();
 
   delay(50);
 
@@ -338,6 +374,57 @@ void loop() {
     }
   }
 #endif
+}
+
+// ---------------------------------------------------------
+// Servo Control
+// ---------------------------------------------------------
+void updateServo() {
+  float r = pressureRatio;
+
+  switch (servoState) {
+  case SERVO_IDLE:
+    boxServo.write(SERVO_POS_CLOSED);
+    if (r >= PRESSURE_POP_THRESHOLD) {
+      servoState = SERVO_OPEN;
+    } else if (r >= PRESSURE_SHAKE_THRESHOLD) {
+      servoState = SERVO_SHAKING;
+      lastShakeTime = millis();
+      shakeCount = 0;
+    }
+    break;
+
+  case SERVO_SHAKING:
+    if (r >= PRESSURE_POP_THRESHOLD) {
+      servoState = SERVO_OPEN;
+    } else if (r < PRESSURE_SHAKE_THRESHOLD) {
+      servoState = SERVO_IDLE;
+    } else {
+      // Burst shake: shake quickly 6 times, then pause 2 seconds
+      unsigned long interval = (shakeCount < 6) ? 150 : 2000;
+      if (millis() - lastShakeTime >= interval) {
+        if (shakeCount < 6) {
+          // Larger amplitude shake: 0 or 30 degrees
+          int pos = shakeDirection ? SERVO_POS_CLOSED + 30 : SERVO_POS_CLOSED;
+          boxServo.write(pos);
+          shakeDirection = !shakeDirection;
+          shakeCount++;
+        } else {
+          // Pause finished, reset burst
+          shakeCount = 0;
+        }
+        lastShakeTime = millis();
+      }
+    }
+    break;
+
+  case SERVO_OPEN:
+    boxServo.write(SERVO_POS_OPEN);
+    if (r < PRESSURE_SHAKE_THRESHOLD) {
+      servoState = SERVO_IDLE;
+    }
+    break;
+  }
 }
 
 // ---------------------------------------------------------
