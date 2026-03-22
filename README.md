@@ -17,7 +17,7 @@ As a mechanical evolution of the [Ambient Trello Aura](https://github.com/XXXSta
 - `img/`: Circuit diagrams and design images (Legacy).
 - `design/`: Design diagrams and documentation for the current project.
 - `Jack/`: Arduino/C++ source code for the Pico W.
-- `Processing_Connect/`: Legacy wired internet connection mode using Processing (Alt/Backup).
+- `Processing_Connect/`: Legacy wired mode (deprecated, no longer supported).
 - `tests/`: API verification and testing scripts (Python).
 
 ## ⚙️ Hardware Components
@@ -77,25 +77,15 @@ Assemble the components on a breadboard according to the **[Pin Mapping & Circui
 3. Select the correct board (**Raspberry Pi Pico W**) and COM port.
 4. Upload the sketch to the Pico W.
 
-> The firmware supports both Wi-Fi and Wired modes. The mode is determined by a single config flag — see the sections below.
+> The firmware operates in Wi-Fi mode only. Wired (USB/Processing) mode has been deprecated.
 
-### 4. Create API Credentials (`.env`)
-Create a `.env` file in the **project root directory** with Trello API credentials. This file is required for both Wi-Fi and Wired modes:
-```env
-TRELLO_API_KEY=your_api_key_here
-TRELLO_TOKEN=your_oauth_token_here
-TRELLO_BOARD_ID=your_board_id_here
-```
+### 4. Create API Credentials
+Open `Jack/keys.h` (you can copy and rename the provided `Jack/keys_template.h` reference file) and fill in Wi-Fi credentials and Trello API keys.
 
-### 5a. Wi-Fi Mode Configuration
-In this mode the Pico W connects to the internet directly and handles all API requests on-device.
+### 5. Wi-Fi Mode Configuration
+The Pico W connects to the internet directly and handles all API requests on-device.
 
-1. Open `Jack/wifi_config.h` and **uncomment** the line:
-   ```cpp
-   #define USE_WIFI_MODE
-   ```
-2. Open `Jack/keys.h` (you can copy and rename the provided `Jack/keys_template.h` reference file) and fill in Wi-Fi credentials and Trello API keys.
-3. **Cornell University (RedRover) Support:** Since the Pico W does not natively support WPA2 Enterprise (eduroam), it is adapted for **RedRover**.
+1. **Cornell University (RedRover) Support:** Since the Pico W does not natively support WPA2 Enterprise (eduroam), it is adapted for **RedRover**.
    - Go to [it.cornell.edu/wifi](https://it.cornell.edu/wifi).
    - Select **"Register an IoT Device on RedRover"**.
    - Register the **Device MAC Address** of your Pico W (printed in the Serial Monitor during startup).
@@ -104,19 +94,7 @@ In this mode the Pico W connects to the internet directly and handles all API re
      #define SECRET_SSID "RedRover"
      #define SECRET_PASS ""
      ```
-4. Re-upload the sketch.
-
-### 5b. Wired Mode Configuration (Alternative / Legacy)
-An alternative mode where a computer handles API requests and communicates with the Pico W via USB Serial. **Note:** This is currently treated as a fallback option and is not under active development.
-
-1. Ensure `Jack/wifi_config.h` has the Wi-Fi flag **commented out** (default):
-   ```cpp
-   // #define USE_WIFI_MODE
-   ```
-2. Keep the Pico W connected to the computer via USB.
-3. Open `Processing_Connect/Processing_Connect.pde` in the [Processing IDE](https://processing.org/).
-4. Update the `COM_PORT` variable to match the Pico W's serial port (e.g., `"COM4"`).
-5. Run the Processing sketch. It will automatically read credentials from the root `.env` file, receive potentiometer data from the Pico W, and send back real-time RGB color values.
+2. Re-upload the sketch.
 
 ### API Testing (Optional)
 <details>
@@ -177,3 +155,5 @@ The Pico W uses dual-core architecture for non-blocking LED animations (Core 1) 
 - **Fix:** Switched to the **RedRover** IoT registration method. By registering the device's MAC address with Cornell IT, the Pico W can connect to the internet without additional enterprise headers. WiFi connection is now stable.
 - **Note:** Ensure `Jack/keys.h` is correctly updated with `SECRET_SSID "RedRover"` and an empty `SECRET_PASS ""` to avoid authentication errors.
 
+### Wired Mode Deprecated
+- **Note:** The USB/Processing wired mode has been removed from the firmware. The project now operates exclusively via Wi-Fi. Legacy Processing files remain in the repository for reference only.

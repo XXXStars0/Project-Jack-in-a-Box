@@ -2,8 +2,7 @@
 // Assignment: A Jack in a Box
 //------------------------
 
-// Mode switch: edit wifi_config.h
-#include "wifi_config.h"
+#include "keys.h"
 #include <Servo.h>
 
 // RGB LED Type: Uncomment if using Common Anode RGB LED
@@ -19,9 +18,6 @@ const int PIN_SERVO = 16;
 const int PIN_POT = 27;
 // const int PIN_LDR = 27;  // TODO: Future sensor input
 // const int PIN_IR = 28;   // TODO: Future sensor input
-
-// Serial baud rate
-const int SERIAL1_BAUD = 9600;
 
 // --- Servo Config ---
 const int SERVO_POS_CLOSED = 0;
@@ -56,9 +52,7 @@ unsigned long lastShakeTime = 0;
 bool shakeDirection = false;
 int shakeCount = 0;
 
-// WiFi-mode-only includes and globals
-#ifdef USE_WIFI_MODE
-#include "keys.h"
+// WiFi and Trello globals
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
@@ -70,7 +64,6 @@ const int MAX_LISTS = 10;
 String listIDs[MAX_LISTS];
 String listNames[MAX_LISTS];
 int listCount = 0;
-#endif
 
 // ---------------------------------------------------------
 // Core 1 (LED Animation Engine) - Runs on the second thread
@@ -177,11 +170,10 @@ void setup() {
 
   currentState = STATE_BOOTING;
 
-#ifdef USE_WIFI_MODE
   // Wait to allow Serial Monitor to open so the user can see connection status
   delay(2000); 
 
-  // WiFi Mode: connect to network, sync time, pre-fetch lists
+  // Connect to network, sync time, pre-fetch lists
   Serial.print("Connecting to WiFi (SSID: ");
   Serial.print(SECRET_SSID);
   Serial.println(")");
@@ -217,16 +209,10 @@ void setup() {
     currentState =
         STATE_TRACKING; // Requires initial loop logic to calculate color
   }
-
-#else
-  // USB Mode: Serial (USB CDC) is shared with Processing.
-  // Do not change state here, Processing will send STATE commands
-#endif
 }
 
 void loop() {
-#ifdef USE_WIFI_MODE
-  // ===== WiFi Mode Loop =====
+  // WiFi connection check
   if (WiFi.status() != WL_CONNECTED) {
     if (currentState != STATE_ERROR) {
       Serial.println("WiFi disconnected!");
@@ -335,45 +321,6 @@ void loop() {
   updateServo();
 
   delay(50);
-
-#else
-  // ===== USB Mode Loop =====
-
-  static unsigned long lastPotSend = 0;
-  if (millis() - lastPotSend >= 200) {
-    lastPotSend = millis();
-    int potValue = analogRead(PIN_POT);
-    Serial.print("POT:");
-    Serial.println(potValue);
-  }
-
-  // 2. Receive commands from Processing
-  if (Serial.available()) {
-    String line = Serial.readStringUntil('\n');
-    line.trim();
-
-    if (line.startsWith("STATE:")) {
-      int s = line.substring(6).toInt();
-      if (s >= 0 && s <= 4) {
-        currentState = (SystemState)s;
-      }
-    } else if (line.startsWith("RGB:")) {
-      int c1 = line.indexOf(':', 4); // Find where R starts
-      int c2 = line.indexOf(',');
-      int c3 = line.lastIndexOf(',');
-      if (c2 > 0 && c3 > c2) {
-        // Line format: RGB:123,45,0
-        int r = line.substring(4, c2).toInt();
-        int g = line.substring(c2 + 1, c3).toInt();
-        int b = line.substring(c3 + 1).toInt();
-        targetR = r;
-        targetG = g;
-        targetB = b;
-        currentState = STATE_TRACKING; // Force tracking if colors provided
-      }
-    }
-  }
-#endif
 }
 
 // ---------------------------------------------------------
@@ -428,9 +375,8 @@ void updateServo() {
 }
 
 // ---------------------------------------------------------
-// WiFi Mode Helper Functions
+// WiFi Helper Functions
 // ---------------------------------------------------------
-#ifdef USE_WIFI_MODE
 
 void fetchTrelloLists() {
   WiFiClientSecure client;
@@ -554,4 +500,3 @@ time_t parseISO8601(const char *dateStr) {
   // Default timezone mktime conversion
   return mktime(&t);
 }
-#endif // USE_WIFI_MODE
