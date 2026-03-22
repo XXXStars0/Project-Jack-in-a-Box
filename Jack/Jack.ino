@@ -43,6 +43,7 @@ volatile int targetB = 0;
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <time.h>
 
 const float MAX_PRESSURE_THRESHOLD = 50.0;
@@ -142,8 +143,8 @@ void loop1() {
 // ---------------------------------------------------------
 
 void setup() {
-  Serial.begin(115200); // USB debug port
-
+  Serial.begin(9600); // Unified baud rate for both debugging and Processing
+  
   // GP13/14/15 are shared with SPI1 by default on Pico W
   pinMode(PIN_LED_R, OUTPUT);
   pinMode(PIN_LED_G, OUTPUT);
@@ -154,9 +155,20 @@ void setup() {
   currentState = STATE_BOOTING;
 
 #ifdef USE_WIFI_MODE
+  // Wait to allow Serial Monitor to open so the user can see connection status
+  delay(2000); 
+
   // WiFi Mode: connect to network, sync time, pre-fetch lists
-  Serial.print("Connecting to WiFi");
-  WiFi.begin(SECRET_SSID, SECRET_PASS);
+  Serial.print("Connecting to WiFi (SSID: ");
+  Serial.print(SECRET_SSID);
+  Serial.println(")");
+  
+  if (String(SECRET_PASS).length() > 0) {
+    WiFi.begin(SECRET_SSID, SECRET_PASS); // WPA2 Personal
+  } else {
+    WiFi.begin(SECRET_SSID); // Open Network (e.g., RedRover)
+  }
+  
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -185,7 +197,6 @@ void setup() {
 
 #else
   // USB Mode: Serial (USB CDC) is shared with Processing.
-  Serial.begin(SERIAL1_BAUD);
   // Do not change state here, Processing will send STATE commands
 #endif
 }
@@ -335,13 +346,16 @@ void loop() {
 #ifdef USE_WIFI_MODE
 
 void fetchTrelloLists() {
+  WiFiClientSecure client;
+  client.setInsecure(); // Skip SSL certificate verification on Pico W
+  
   HTTPClient http;
   String url = "https://api.trello.com/1/boards/" + String(TRELLO_BOARD_ID) +
                "/lists?key=" + String(TRELLO_API_KEY) +
                "&token=" + String(TRELLO_TOKEN);
 
   Serial.println("Fetching board Lists...");
-  http.begin(url);
+  http.begin(client, url);
   int httpCode = http.GET();
 
   if (httpCode == 200) {
@@ -379,12 +393,15 @@ void fetchTrelloLists() {
 }
 
 int calculateListPressure(String listId) {
+  WiFiClientSecure client;
+  client.setInsecure();
+  
   HTTPClient http;
   String url = "https://api.trello.com/1/lists/" + listId +
                "/cards?key=" + String(TRELLO_API_KEY) +
                "&token=" + String(TRELLO_TOKEN);
 
-  http.begin(url);
+  http.begin(client, url);
   int httpCode = http.GET();
   int pressure = 0;
 

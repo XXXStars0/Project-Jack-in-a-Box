@@ -6,14 +6,14 @@
 ![Arduino IDE](https://img.shields.io/badge/-Arduino_IDE-00979D?logo=Arduino&logoColor=white)
 ![C++](https://img.shields.io/badge/-C++-00599C?logo=c%2B%2B&logoColor=white)
 
-**Project jack in a box**: A Jack in a Box toy / desk setup based on the [Ambient Trello Aura](https://github.com/XXXStars0/Project-LED-Light). Currently under development.
+**Project jack in a box**: A Jack in a Box toy / desk setup based on the [Ambient Trello Aura](https://github.com/XXXStars0/Project-LED-Light). Now supports **RedRover** (Cornell IoT) for standalone connectivity. Currently under development.
 
 ## 📁 Project Structure
 
 - `img/`: Circuit diagrams and design images (Legacy).
 - `design/`: Design diagrams and documentation for the current project.
-- `RGB_LED/`: Arduino/C++ source code for the Pico W.
-- `Processing_Connect/`: Alt wired internet connection mode using Processing.
+- `Jack/`: Arduino/C++ source code for the Pico W.
+- `Processing_Connect/`: Legacy wired internet connection mode using Processing (Alt/Backup).
 - `tests/`: API verification and testing scripts (Python).
 
 ## ⚙️ Hardware Components
@@ -31,11 +31,11 @@ New design is still under development.
 
 ## 💡 Pin Mapping Reference
 
-| Component          | Pico W Pin                   | Note           |
-| ------------------ | ---------------------------- | -------------- |
-| **RGB LED**        | GP13 (R), GP14 (G), GP15 (B) | PWM Support    |
-| **Potentiometer**  | GP27                         | Analog Input   |
-| **Servo (MG 996R)**| GP16                         | PWM Control    |
+| Component           | Pico W Pin                   | Note         |
+| ------------------- | ---------------------------- | ------------ |
+| **RGB LED**         | GP13 (R), GP14 (G), GP15 (B) | PWM Support  |
+| **Potentiometer**   | GP27                         | Analog Input |
+| **Servo (MG 996R)** | GP16                         | PWM Control  |
 
 ## 📡 API Integration
 
@@ -51,8 +51,8 @@ This project uses the **[Trello API](https://developer.atlassian.com/cloud/trell
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/XXXStars0/Project-LED-Light.git
-cd Project-LED-Light
+git clone https://github.com/XXXStars0/Project-Jack-in-a-Box.git
+cd Project-Jack-in-a-Box
 ```
 
 ### 2. Hardware Assembly
@@ -60,7 +60,7 @@ Assemble the components on a breadboard according to the **[Pin Mapping & Circui
 
 ### 3. Flash the Firmware
 1. Install the **Raspberry Pi Pico/RP2040** board support in the [Arduino IDE](https://www.arduino.cc/en/software/).
-2. Open `RGB_LED/RGB_LED.ino`.
+2. Open `Jack/Jack.ino`.
 3. Select the correct board (**Raspberry Pi Pico W**) and COM port.
 4. Upload the sketch to the Pico W.
 
@@ -77,17 +77,26 @@ TRELLO_BOARD_ID=your_board_id_here
 ### 5a. Wi-Fi Mode Configuration
 In this mode the Pico W connects to the internet directly and handles all API requests on-device.
 
-1. Open `RGB_LED/wifi_config.h` and **uncomment** the line:
+1. Open `Jack/wifi_config.h` and **uncomment** the line:
    ```cpp
    #define USE_WIFI_MODE
    ```
-2. Open `RGB_LED/keys.h` (you can copy and rename the provided `RGB_LED/keys_template.h` reference file) and fill in Wi-Fi credentials and Trello API keys.
-3. Re-upload the sketch.
+2. Open `Jack/keys.h` (you can copy and rename the provided `Jack/keys_template.h` reference file) and fill in Wi-Fi credentials and Trello API keys.
+3. **Cornell University (RedRover) Support:** Since the Pico W does not natively support WPA2 Enterprise (eduroam), it is adapted for **RedRover**.
+   - Go to [it.cornell.edu/wifi](https://it.cornell.edu/wifi).
+   - Select **"Register an IoT Device on RedRover"**.
+   - Register the **Device MAC Address** of your Pico W (printed in the Serial Monitor during startup).
+   - In `Jack/keys.h`, set the SSID to `"RedRover"` and leave the password empty:
+     ```cpp
+     #define SECRET_SSID "RedRover"
+     #define SECRET_PASS ""
+     ```
+4. Re-upload the sketch.
 
-### 5b. Wired Mode Configuration (Processing)
-An alternative mode where a computer handles API requests and communicates with the Pico W via USB Serial.
+### 5b. Wired Mode Configuration (Alternative / Legacy)
+An alternative mode where a computer handles API requests and communicates with the Pico W via USB Serial. **Note:** This is currently treated as a fallback option and is not under active development.
 
-1. Ensure `RGB_LED/wifi_config.h` has the Wi-Fi flag **commented out** (default):
+1. Ensure `Jack/wifi_config.h` has the Wi-Fi flag **commented out** (default):
    ```cpp
    // #define USE_WIFI_MODE
    ```
@@ -147,4 +156,11 @@ The Pico W uses dual-core architecture for non-blocking LED animations (Core 1) 
   - 🟢 **Green:** Low pressure.
   - 🟡 **Yellow:** Medium pressure.
   - 🔴 **Red:** High pressure (urgent/overdue).
+
+## 🛠️ Troubleshooting & Fixes
+
+### Eduroam Connection Failure
+- **Issue:** Attempted to support `eduroam` (WPA2 Enterprise) directly, but the Pico W's `WiFi.h` library (arduino-pico) does not natively support the EAP authentication required for university networks.
+- **Fix:** Switched to the **RedRover** IoT registration method. By registering the device's MAC address with Cornell IT, the Pico W can connect to the internet without additional enterprise headers. WiFi connection is now stable.
+- **Note:** Ensure `Jack/keys.h` is correctly updated with `SECRET_SSID "RedRover"` and an empty `SECRET_PASS ""` to avoid authentication errors.
 
