@@ -25,6 +25,10 @@ const int SERVO_POS_OPEN = 180;
 const float PRESSURE_SHAKE_THRESHOLD = 0.5;
 const float PRESSURE_POP_THRESHOLD = 0.8;
 
+// --- Interaction Config ---
+const String DONE_LIST_NAME = "Done"; // List name that unconditionally reports 0 pressure (Green light)
+const unsigned long SLEEP_TIMEOUT = 60000; // Inactivity timeout in ms (60 seconds)
+
 // --- State Machine ---
 enum SystemState {
   STATE_BOOTING = 0,
@@ -232,6 +236,7 @@ void loop() {
 
   static int lastSelectedIndex = -1;
   static unsigned long lastApiRequestTime = 0;
+  static unsigned long lastPotInteractionTime = millis();
   const unsigned long apiRequestInterval = 30000; // 30s between auto-refreshes
 
   if (currentState == STATE_SLEEP) {
@@ -243,6 +248,7 @@ void loop() {
     if (idxNow != lastSelectedIndex) {
       currentState = STATE_BOOTING;
       Serial.println("POT: Wake");
+      lastPotInteractionTime = millis();
     } else {
       delay(50);
       return;
@@ -257,6 +263,14 @@ void loop() {
   bool timeToUpdate = (millis() - lastApiRequestTime >= apiRequestInterval);
   bool listChanged = (currentSelectedIndex != lastSelectedIndex);
 
+  if (listChanged) {
+    lastPotInteractionTime = millis();
+  } else if (millis() - lastPotInteractionTime >= SLEEP_TIMEOUT && currentState != STATE_SLEEP) {
+    Serial.println("Inactivity timeout: Going to Sleep.");
+    currentState = STATE_SLEEP;
+    return;
+  }
+
   if (listChanged || timeToUpdate) {
     currentState = STATE_LOADING;
     // TODO: Future - pause servo during loading if needed
@@ -266,14 +280,27 @@ void loop() {
     Serial.print(listNames[currentSelectedIndex]);
     Serial.println("'");
 
-    int totalPressure = calculateListPressure(listIDs[currentSelectedIndex]);
-    Serial.print("Total pressure: ");
-    Serial.println(totalPressure);
+    bool isDoneList = listNames[currentSelectedIndex].equalsIgnoreCase(DONE_LIST_NAME);
+    int totalPressure = 0;
+
+    if (isDoneList) {
+      Serial.println("  -> List is marked as 'Done'. Pressure overridden to 0.");
+    } else {
+      totalPressure = calculateListPressure(listIDs[currentSelectedIndex]);
+      Serial.print("Total pressure: ");
+      Serial.println(totalPressure);
+    }
 
     // Color mapping: Blue(idle) → Green(low) → Yellow(mid) → Red(high)
     int r, g, b;
     float ratio = 0.0;
-    if (totalPressure == 0) {
+    
+    if (isDoneList) {
+      // Direct green for Done lists
+      r = 0;
+      g = 255;
+      b = 0;
+    } else if (totalPressure == 0) {
       r = 0;
       g = 0;
       b = 255;
@@ -451,6 +478,11 @@ int calculateListPressure(String listId) {
       time_t currentTime = time(nullptr);
 
       for (JsonObject card : cards) {
+        if (!card["dueComplete"].isNull() && card["dueComplete"].as<bool>()) {
+          // Task completes logic: ignore due date calculations completely
+          continue; 
+        }
+
         if (!card["due"].isNull()) {
           String dueStr = card["due"].as<String>();
           time_t dueDate = parseISO8601(dueStr.c_str());

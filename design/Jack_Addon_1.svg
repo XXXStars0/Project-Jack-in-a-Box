@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_0" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 340.33 337.86">
+  <!-- Generator: Adobe Illustrator 30.2.1, SVG Export Plug-In . SVG Version: 2.1.1 Build 1)  -->
+  <defs>
+    <style>
+      .st0 {
+        font-family: AdobeSongStd-Light-GBpc-EUC-H, 'Adobe Song Std';
+        font-size: 12px;
+        font-weight: 300;
+        stroke: aqua;
+        stroke-miterlimit: 10;
+      }
+
+      .st1 {
+        stroke-dasharray: 1.42 .71;
+      }
+
+      .st1, .st2 {
+        stroke: red;
+      }
+
+      .st1, .st2, .st3 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: .71px;
+      }
+
+      .st3 {
+        stroke: lime;
+      }
+    </style>
+  </defs>
+  <g id="POINT">
+    <line class="st2" x1="168.24" y1="168.14" x2="168.24" y2="168.14"/>
+  </g>
+  <g id="LINE">
+    <line class="st1" x1="34.83" y1="35.04" x2="34.83" y2="35.02"/>
+  </g>
+  <g id="LINE-2">
+    <line class="st1" x1="34.83" y1="35.02" x2="34.83" y2="34.67"/>
+  </g>
+  <g id="LINE-3">
+    <line class="st1" x1="35.12" y1="34.75" x2="34.69" y2="34.75"/>
+  </g>
+  <g id="LWPOLYLINE">
+    <rect class="st3" x="34.83" y="34.75" width="266.82" height="264.18"/>
+  </g>
+  <g id="LWPOLYLINE-2">
+    <rect class="st2" x="26.51" y="26.41" width="283.47" height="283.47"/>
+  </g>
+  <text class="st0" transform="translate(146.52 158.43)"><tspan x="0" y="0">Box Wrap</tspan></text>
+</svg>
