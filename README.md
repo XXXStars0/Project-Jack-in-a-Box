@@ -50,6 +50,6 @@ Here is the core workflow:
 ## 📄 License & Acknowledgements
 
 This project uses a multi-license structure:
-- **Design Files (`design/Jack_Design_Lazercut.svg`)**: Distributed under the **GPLv3 License**. The box structure is an adaptation of the [PirateChest](https://boxes.hackerspace-bamberg.de/PirateChest) project from Hackerspace Bamberg.
+- **Design Files (`design/Jack_Design_Lazercut.svg`)**: Distributed under the **GPLv3 License** (see [`design/LICENSE`](design/LICENSE)). The box structure is an adaptation of the [PirateChest](https://boxes.hackerspace-bamberg.de/PirateChest) project from Hackerspace Bamberg.
 - **Documentation (`docs/`, `README.md`)**: Distributed under the **CC BY-SA 4.0 License**.
 - **Source Code & Remaining Files**: Distributed under the **MIT License** (see the [`LICENSE`](LICENSE) file for details).
