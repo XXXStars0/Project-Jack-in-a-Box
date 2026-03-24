@@ -19,8 +19,8 @@ As a mechanical evolution of the [Ambient Trello Aura](https://github.com/XXXSta
 
 ## 📁 Project Structure
 
-- `img/`: Circuit diagrams and design images (Legacy).
-- `design/`: Design diagrams and documentation for the current project.
+- `img/`: Circuit design diagrams and project photos.
+- `design/`: SVG laser cutting design files.
 - `Jack/`: Arduino/C++ source code for the Pico W.
 - `Processing_Connect/`: Legacy wired mode (deprecated, no longer supported).
 - `tests/`: API verification and testing scripts (Python).
